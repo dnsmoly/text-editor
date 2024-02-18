@@ -1,18 +1,25 @@
 package backend;
 
-import java.io.*;
+import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
+@Slf4j
 public class SimpleBufferManager implements BufferManager {
     private char[] buffer;
     private String filename;
     private long[] lineBuffer;
     private int size;
+
     @Override
     public char[] getLine(long index) {
         return Arrays.copyOfRange(buffer, (int) lineBuffer[(int) index], (int) lineBuffer[(int) index + 1]);
-        // TODO why wrong numbers
     }
 
     @Override
@@ -27,10 +34,10 @@ public class SimpleBufferManager implements BufferManager {
         try (FileReader fis = new FileReader(file, StandardCharsets.UTF_8)) {
             buffer = new char[(int) file.length()];
             if (fis.read(buffer) < (int) file.length()) {
-                System.out.println("File haven't been loaded fully");
+                log.info("File haven't been loaded fully");
             }
         } catch (IOException ioe) {
-            ioe.printStackTrace();
+            log.error("Error while loading file", ioe);
         }
         initLineBuffer();
     }
@@ -38,10 +45,10 @@ public class SimpleBufferManager implements BufferManager {
     @Override
     public void writeFile() {
         File file = new File(filename);
-        try (FileWriter fos = new FileWriter(file)){
+        try (FileWriter fos = new FileWriter(file)) {
             fos.write(buffer);
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("Error while writing file", e);
         }
     }
 
@@ -51,7 +58,7 @@ public class SimpleBufferManager implements BufferManager {
         int lineStart = 0;
         for (int i = 0; i < lineBuffer.length; ) {
             if (buffer[i++] == '\r') {
-                if(buffer[i] == '\n') {
+                if (buffer[i] == '\n') {
                     i++;
                     lineBuffer[lineCounter++] = lineStart;
                     lineStart = i;
